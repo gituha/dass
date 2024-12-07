@@ -1,0 +1,76 @@
+from tkinter import Canvas, Tk
+from random import randint
+
+
+class Game:
+    """Класс для представления игры Змейка."""
+
+    def __init__(self, canvas):
+        """Инициализация игры."""
+        self.canvas = canvas
+        self.snake_coords = [[14, 14]]
+        self.apple_coords = [randint(0, 29) for _ in range(2)]
+        self.vector = {"Down": (0, 1), "Up": (0, -1), "Left": (-1, 0), "Right": (1, 0)}
+        self.direction = self.vector["Right"]
+        self.canvas.focus_set()
+        self.canvas.bind("<KeyPress>", self.set_direction)
+        self.game_loop()
+
+    def set_apple(self):
+        """Установить новое положение яблока."""
+        self.apple_coords = [randint(0, 29) for _ in range(2)]
+        if self.apple_coords in self.snake_coords:
+            self.set_apple()
+
+    def set_direction(self, event):
+        """Установить новое направление змейки."""
+        if event.keysym in self.vector:
+            self.direction = self.vector[event.keysym]
+
+    def draw(self):
+        """Отрисовка игры."""
+        self.canvas.delete("all")
+        x_apple, y_apple = self.apple_coords
+        self.canvas.create_rectangle(
+            x_apple * 10, y_apple * 10,
+            (x_apple + 1) * 10, (y_apple + 1) * 10,
+            fill="red", width=0
+        )
+        for x, y in self.snake_coords:
+            self.canvas.create_rectangle(
+                x * 10, y * 10,
+                (x + 1) * 10, (y + 1) * 10,
+                fill="green", width=0
+            )
+
+    @staticmethod
+    def coord_check(coord):
+        """Проверить координаты на интервале [0, 29]."""
+        return max(0, min(29, coord))
+
+    def game_loop(self):
+        """Основной цикл игры."""
+        self.draw()
+        head_x, head_y = self.snake_coords[0]
+        head_x += self.direction[0]
+        head_y += self.direction[1]
+        head_x = self.coord_check(head_x)
+        head_y = self.coord_check(head_y)
+
+        if [head_x, head_y] == self.apple_coords:
+            self.set_apple()
+        elif [head_x, head_y] in self.snake_coords:
+            self.snake_coords = []  # Игра окончена
+        else:
+            self.snake_coords.pop()
+
+        self.snake_coords.insert(0, [head_x, head_y])
+        self.canvas.after(100, self.game_loop)
+
+
+if __name__ == "__main__":
+    root = Tk()
+    canvas = Canvas(root, width=600, height=300, bg="black")
+    canvas.pack()
+    game = Game(canvas)
+    root.mainloop()
